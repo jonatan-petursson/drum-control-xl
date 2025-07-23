@@ -1,0 +1,39 @@
+name: Package Python Files
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create DIST_FOLDERNAME
+        run: |
+          echo "${{ github.event.release.tag_name }}" > VERSION
+          DIST_FOLDERNAME=Drum_Control_XL_$(cat VERSION | tr '.' '_')
+          echo "DIST_FOLDERNAME=$DIST_FOLDERNAME" >> $GITHUB_ENV
+          echo "DIST_FILENAME=$DIST_FOLDERNAME.zip" >> $GITHUB_ENV
+
+      - name: Prepare package
+        run: |
+          mkdir -p $DIST_FOLDERNAME/Drum_Control_XL
+          cp *.py VERSION $DIST_FOLDERNAME/Drum_Control_XL/
+          cp scripts/* $DIST_FOLDERNAME/
+
+      - name: Create zip file
+        run: |
+          zip -r $DIST_FILENAME $DIST_FOLDERNAME
+
+      - name: Upload to release
+        run: |
+          gh release upload ${{ github.event.release.tag_name }} $DIST_FILENAME
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
